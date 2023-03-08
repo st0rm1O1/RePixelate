@@ -61,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
                     + File.separator + "RealSR";
     private File outputFile;
     private String dir;
-    // dir="/data/data/com.tumuyan.ncnn.realsr/cache/realsr";
     private String modelName = "SR";
     private SearchView searchView;
     private MenuItem menuProgress;
@@ -324,13 +323,8 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    /**
-     * 生成用户自定义命令. 自定义模型路径的命令与App预设命令有一样的外观和特性
-     *
-     * @param extraPath    自定义模型路径
-     * @param extraCommand 用户预设命令
-     * @return 全部扩展命令
-     */
+
+
     private List<String> getExtraCommands(String extraPath, String extraCommand) {
 
         // 解析结果，包含模型目录、用户自定义命令（命令列表）
@@ -357,7 +351,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // 增加magick插值放大的命令
+
         String[] magickFilters = {
                 "Hermite",
                 "Hermite",
@@ -391,13 +385,12 @@ public class MainActivity extends AppCompatActivity {
                 String name = folder.getName();
                 if (folder.isDirectory() && name.startsWith("models")) {
 
-                    // 匹配realsr模型
                     String model = name.replace("models-", "");
                     String scaleMatcher = ".*x(\\d+).*";
                     String noiseMatcher = "";
                     String command = "./realsr-ncnn -i input.png -o output.png  -m " + folder.getAbsolutePath() + " -s ";
 
-                    // 匹配waifu2x模型
+
                     if (name.matches("models-(cugan|cunet|upconv).*")) {
                         model = name.replace("models-", "Waifu2x-");
                         scaleMatcher = ".*scale(\\d+).*";
@@ -417,7 +410,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        // 模型目录显示label
         int l = command_0.length;
         command = new String[cmdList.size() + l];
 
@@ -426,7 +418,6 @@ public class MainActivity extends AppCompatActivity {
             command[l + i] = cmdList.get(i);
 
 
-        // 预设命令显示命令
         if (!extraCommand.isEmpty()) {
             String[] cmds = extraCommand.split("\n");
             cmdLabel.addAll(Arrays.asList(cmds));
@@ -436,14 +427,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    /**
-     * 从用户自定义模型路径加载文件，自动列出可用命令
-     *
-     * @param folder       自定义模型目录
-     * @param scaleMatcher 缩放倍率抓取规则
-     * @param noiseMatcher 降噪系数抓取规则
-     * @return 模型名称的列表
-     */
     private static List<String> genCmdFromModel(File folder, String scaleMatcher, String noiseMatcher) {
         List<String> list = new ArrayList<>();
         File[] files = folder.listFiles();
@@ -460,7 +443,6 @@ public class MainActivity extends AppCompatActivity {
         Arrays.sort(fileNames);
 
         for (String name : fileNames) {
-            // 只解析整数倍缩放
             String s;
             if (name.matches(scaleMatcher))
                 s = (name.replaceFirst(scaleMatcher, "$1"));
@@ -538,7 +520,7 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
 
-            //用户输入字符时激发该方法
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText.trim().length() < 2) {
@@ -644,9 +626,32 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_setting).setOnClickListener(view -> {
-            Intent intent = new Intent(this, SettingActivity.class);
-            this.startActivity(intent);
-            overridePendingTransition(0, android.R.anim.slide_out_right);
+
+            if (!run_fake_command("out")) {
+                stopCommand();
+                String finalImageName = "/input.png";
+                new Thread(
+                        () -> {
+                            run20("out");
+                            final File finalfile = new File(dir + finalImageName);
+                            if (finalfile.exists()) {
+                                runOnUiThread(
+                                        () -> {
+                                            imageView.setVisibility(View.VISIBLE);
+                                            imageView.setImage(ImageSource.uri(finalfile.getAbsolutePath()));
+                                        }
+                                );
+                            } else {
+                                runOnUiThread(
+                                        () -> imageView.setVisibility(View.GONE)
+                                );
+                            }
+                        }
+                ).start();
+            }
+//            Intent intent = new Intent(this, SettingActivity.class);
+//            this.startActivity(intent);
+//            overridePendingTransition(0, android.R.anim.slide_out_right);
         });
 
         requirePremision();
@@ -668,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
                     MY_PERMISSIONS_REQUEST);
 
         } else {
-            //权限已经被授予，在这里直接写要执行的相应方法即可
+
             File file = new File(savePath);
             if (file.isFile())
                 file.delete();
@@ -717,7 +722,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    // 在主进程执行命令但是不刷新UI，也不被打断
+
     public boolean run_command(@NonNull String command) {
 
         if (command.trim().length() < 1) {
@@ -789,12 +794,10 @@ public class MainActivity extends AppCompatActivity {
         final boolean save = run_ncnn && autoSave && cmd.contains("output.png");
 
 
-        // 对应process进程的3个流
         BufferedReader successResult;
         BufferedReader errorResult;
         DataOutputStream os;
 
-        // 保存的执行结果
         StringBuilder result = new StringBuilder();
 
         try {
@@ -809,7 +812,7 @@ public class MainActivity extends AppCompatActivity {
         os = new DataOutputStream(process.getOutputStream());
 
         try {
-            // 写入要执行的命令
+
             os.flush();
 
             os.writeBytes("cd " + dir + "\n");
@@ -842,7 +845,7 @@ public class MainActivity extends AppCompatActivity {
             String line;
             Log.i("run20", "process.getErrorStream() start");
 
-            // 读取错误输出
+
             try {
                 while ((line = errorResult.readLine()) != null) {
                     if (line.contains("unused DT entry"))
@@ -1088,7 +1091,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //    生成输出的图片的命令
+
     private String saveOutputCmd() {
 
         SimpleDateFormat f = new SimpleDateFormat("MMdd_HHmmss");

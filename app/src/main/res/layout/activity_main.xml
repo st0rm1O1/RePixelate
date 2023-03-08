@@ -30,7 +30,7 @@
             android:layout_marginHorizontal="3dp"
             android:layout_weight="1"
             android:lines="1"
-            android:text="@string/setting" />
+            android:text="Output" />
 
         <Button
             android:id="@+id/btn_run"
@@ -108,8 +108,7 @@
                 android:paddingLeft="15dp"
                 android:paddingTop="5dp"
                 android:paddingRight="15dp"
-                android:paddingBottom="10dp"
-                android:text="@string/default_log" />
+                android:paddingBottom="10dp" />
         </LinearLayout>
     </ScrollView>
 
